@@ -12,7 +12,7 @@ const Signup = () => {
     const [pic, setPic]=useState();
     const [loading, setLoading]= useState(false);
     const toast = useToast()
-    const history= useHistory
+    const history= useHistory();
     const handleClick=()=>{
         setShow(!show);
     };
@@ -61,7 +61,8 @@ const Signup = () => {
         return;
       }
     };
-    const submitHandler= async()=>{
+    const submitHandler= async(e)=>{
+        e.preventDefault();
         setLoading(true);
         if(!name|| !email || !password || !confirmPassword){
           toast({
@@ -127,7 +128,7 @@ const Signup = () => {
         <FormLabel>
             Email
         </FormLabel>
-        <Input placeholder='Enter your Email'
+        <Input type="email" placeholder='Enter your Email'
         onChange={(e)=>setEmail(e.target.value)}/>
       </FormControl>
       <FormControl id="password" isRequired>
