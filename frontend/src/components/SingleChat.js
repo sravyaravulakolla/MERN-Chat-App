@@ -27,7 +27,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected]= useState(false);
   const [typing, setTyping]= useState(false);
   const [isTyping, setIsTyping]= useState(false);
-  const { user, selectedChat, setSelectedChat } = useChatState();
+  const { user, selectedChat, setSelectedChat, notifications, setNotifications} = useChatState();
   const toast = useToast();
   const defaultOptions={
     loop:true,
@@ -56,7 +56,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           },
           config
         );
-        console.log(data);
+        // console.log(data);
         socket.emit("new message", data);
 
         setMessages([...messages, data]);
@@ -97,7 +97,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         `/api/message/${selectedChat._id}`,
         config
       );
-      console.log(messages);
+      // console.log(messages);
       setMessages(data);
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
@@ -116,10 +116,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     fetchMessages();
     selectedChatCompare= selectedChat;
   }, [selectedChat]);
+  // console.log(notifications,"--------------");
+  
   useEffect(()=>{
     socket.on("message received",(newMessageReceived)=>{
       if(!selectedChatCompare || selectedChatCompare._id!== newMessageReceived.chat._id){
-
+          if(!notifications.includes(newMessageReceived)){
+            setNotifications([newMessageReceived,...notifications]);
+            setFetchAgain(!fetchAgain);
+          }
       }
       else{
         setMessages([...messages, newMessageReceived]);
