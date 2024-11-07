@@ -6,6 +6,7 @@ const colors= require("colors");
 const userRoutes= require("./routes/userRoutes");
 const chatRoutes= require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const videoRoutes = require("./routes/videoRoutes"); // Import video routes
 const { notFound, errorHandler } = require("./middleware/errorMiddleWare");
 dotenv.config();
 connectDB();
@@ -17,6 +18,7 @@ app.get('/',(req, res)=>{
 app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/message', messageRoutes);
+app.use('/api/zoom',videoRoutes);
 app.use(notFound);
 app.use(errorHandler);
 const PORT= process.env.PORT || 5000;
@@ -54,4 +56,5 @@ io.on("connection",(socket)=>{
       console.log("USER DISCONNECTED");
       socket.leave(userData._id);  
     })
+    
 });

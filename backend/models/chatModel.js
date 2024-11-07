@@ -4,28 +4,43 @@
 // latestMessage
 // groupAdmin
 const mongoose= require("mongoose");
-const chatModel= mongoose.Schema(
-    {
-        chatName:{type:String, trim: true},
-        isGroupChat:{type: Boolean, default: false},
-        users:[
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref:"User",
-            },
-        ],
-        latestMessage:{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Message",
-        },
-        groupAdmin:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"User",
-        },
+const chatModel = mongoose.Schema(
+  {
+    chatName: { type: String, trim: true },
+    isGroupChat: { type: Boolean, default: false },
+    users: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    latestMessage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
     },
-    {
-        timestamps:true,
-    }
+    groupAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    meetingId: {
+      // Store Zoom meeting ID
+      type: String,
+      default: null,
+    },
+    joinUrl: {
+      // Store the Zoom meeting join URL
+      type: String,
+      default: null,
+    },
+    password: {
+      // Store the Zoom meeting password (if any)
+      type: String,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 const Chat= mongoose.model("Chat",chatModel);
 module.exports=Chat;

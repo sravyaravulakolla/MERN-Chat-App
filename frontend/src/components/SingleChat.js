@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useChatState } from "../Context/ChatProvider";
 import {
   Box,
+  Button,
   FormControl,
   IconButton,
   Input,
@@ -9,7 +10,7 @@ import {
   Text,
   useToast,
 } from "@chakra-ui/react";
-import { ArrowBackIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, CloseIcon, PhoneIcon } from "@chakra-ui/icons";
 import { getSender, getSenderFull } from "../config/ChatLogics";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
@@ -18,6 +19,7 @@ import ScrollableChat from "./ScrollableChat";
 import io from "socket.io-client";
 import Lottie from 'react-lottie';
 import animationData from "../animations/typing.json";
+import { useHistory } from "react-router-dom";
 const ENDPOINT="http://localhost:5000";
 var socket, selectedChatCompare;
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -27,8 +29,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [socketConnected, setSocketConnected]= useState(false);
   const [typing, setTyping]= useState(false);
   const [isTyping, setIsTyping]= useState(false);
+  const [isInCall, setIsInCall] = useState(false);
+  const [isRinging, setIsRinging] = useState(false); // For showing ringing notification
   const { user, selectedChat, setSelectedChat, notifications, setNotifications} = useChatState();
   const toast = useToast();
+  const history = useHistory();
   const defaultOptions={
     loop:true,
     autoplay:true,
@@ -37,6 +42,28 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       preserveAspectRatio:"xMidYMid slice"
     }
   }
+  useEffect(() => {
+    socket = io(ENDPOINT);
+    socket.emit("setup", user);
+    socket.on("connected", () => setSocketConnected(true));
+
+    // Ring event when call is initiated
+    socket.on("ring", () => {
+      setIsRinging(true);
+      setTimeout(() => setIsRinging(false), 30000); // Ring timeout 30s
+    });
+
+    socket.on("join call", () => setIsInCall(true));
+    socket.on("call end", () => setIsInCall(false));
+  }, []);
+  const handleCallToggle = () => {
+    if (!isInCall) {
+      const videoCallUrl = `/video-call/${selectedChat._id}`;
+      window.open(videoCallUrl, "_blank"); // Open video call in a new tab
+    } 
+    setIsInCall(!isInCall);
+  };
+
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
@@ -169,6 +196,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               icon={<ArrowBackIcon />}
               onClick={() => setSelectedChat("")}
             />
+            {/* Show ringing notification */}
+            {isRinging && <Text>Ringing...</Text>}
+            <Button
+              onClick={handleCallToggle}
+              ml={4}
+              colorScheme={isInCall ? "red" : "blue"}
+            >
+              {isInCall ? <CloseIcon boxSize={6} /> : <PhoneIcon boxSize={6} />}
+            </Button>
             {!selectedChat.isGroupChat ? (
               <>
                 {getSender(user, selectedChat.users)}
@@ -206,13 +242,21 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               />
             ) : (
               <div>
-                <ScrollableChat messages={messages}/>
+                <ScrollableChat messages={messages} />
               </div>
             )}
             <FormControl onKeyDown={sendMessage} isRequired mt={3}>
-              {isTyping?<div>
-                <Lottie options={defaultOptions} width={70} style={{marginBottom:15, marginLeft:0}}/>
-              </div>:(<></>)}
+              {isTyping ? (
+                <div>
+                  <Lottie
+                    options={defaultOptions}
+                    width={70}
+                    style={{ marginBottom: 15, marginLeft: 0 }}
+                  />
+                </div>
+              ) : (
+                <></>
+              )}
               <Input
                 variant={"filled"}
                 bg={"#E0E0E0"}
