@@ -7,6 +7,11 @@ import {
   IconButton,
   Input,
   Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
   Text,
   useToast,
 } from "@chakra-ui/react";
@@ -196,8 +201,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               icon={<ArrowBackIcon />}
               onClick={() => setSelectedChat("")}
             />
-            {/* Show ringing notification */}
-            {isRinging && <Text>Ringing...</Text>}
             <Button
               onClick={handleCallToggle}
               ml={4}
@@ -221,51 +224,71 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </>
             )}
           </Text>
-          <Box
-            display={"flex"}
-            flexDir={"column"}
-            justifyContent={"flex-end"}
-            p={3}
-            bg={"#E8E8E8"}
-            w={"100%"}
-            h={"100%"}
-            borderRadius={"lg"}
-            overflowY={"hidden"}
+          <Tabs
+            width={"100%"}
+            h={"80%"}
+            colorScheme="blue"        
           >
-            {loading ? (
-              <Spinner
-                size={"xl"}
-                w={20}
-                h={20}
-                alignSelf={"center"}
-                margin={"auto"}
-              />
-            ) : (
-              <div>
-                <ScrollableChat messages={messages} />
-              </div>
-            )}
-            <FormControl onKeyDown={sendMessage} isRequired mt={3}>
-              {isTyping ? (
-                <div>
-                  <Lottie
-                    options={defaultOptions}
-                    width={70}
-                    style={{ marginBottom: 15, marginLeft: 0 }}
-                  />
-                </div>
-              ) : (
-                <></>
-              )}
-              <Input
-                variant={"filled"}
-                bg={"#E0E0E0"}
-                placeholder="Enter a message.."
-                onChange={typingHandler}
-                value={newMessage}
-              />
-            </FormControl>
-          </Box>
+            <TabList>
+              <Tab>Chats</Tab>
+              <Tab>Files</Tab>
+              <Tab>Tasks</Tab>
+            </TabList>
+            <TabPanels  h={"100%"}>
+              <TabPanel
+                
+                height={"100%"}
+              >
+                <Box
+                  display={"flex"}
+                  flexDir={"column"}
+                  justifyContent={"flex-end"}
+                  p={3}
+                  bg={"#E8E8E8"}
+                  w={"100%"}
+                  h={"90%"}
+                  borderRadius={"lg"}
+                  overflowY={"auto"}
+                >
+                  {loading ? (
+                    <Spinner
+                      size={"xl"}
+                      w={20}
+                      h={20}
+                      alignSelf={"center"}
+                      margin={"auto"}
+                    />
+                  ) : (
+                    <div>
+                      <ScrollableChat messages={messages} />
+                    </div>
+                  )}
+                </Box>
+                <Box>
+                  <FormControl onKeyDown={sendMessage} isRequired mt={3}>
+                    {isTyping ? (
+                      <div>
+                        <Lottie
+                          options={defaultOptions}
+                          width={70}
+                          style={{ marginBottom: 15, marginLeft: 0 }}
+                        />
+                      </div>
+                    ) : (
+                      <></>
+                    )}
+                    <Input
+                      variant={"filled"}
+                      bg={"#E0E0E0"}
+                      placeholder="Enter a message.."
+                      onChange={typingHandler}
+                      value={newMessage}
+                    />
+                  </FormControl>
+                </Box>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
         </>
       ) : (
         <Box
