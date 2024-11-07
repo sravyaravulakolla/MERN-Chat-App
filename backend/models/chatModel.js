@@ -1,9 +1,21 @@
-// chatName
-// isGroupChat
-// users
-// latestMessage
-// groupAdmin
-const mongoose= require("mongoose");
+const mongoose = require("mongoose");
+
+const taskSchema = mongoose.Schema({
+  description: { type: String, required: true, trim: true },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true, // Ensure tasks are assigned to users within the group
+  },
+  dueDate: { type: Date, default: null },
+  completed: { type: Boolean, default: false },
+});
+
+const phaseSchema = mongoose.Schema({
+  phaseName: { type: String, required: true, trim: true },
+  tasks: [taskSchema], // Array of tasks within each phase
+});
+
 const chatModel = mongoose.Schema(
   {
     chatName: { type: String, trim: true },
@@ -23,24 +35,23 @@ const chatModel = mongoose.Schema(
       ref: "User",
     },
     meetingId: {
-      // Store Zoom meeting ID
       type: String,
       default: null,
     },
     joinUrl: {
-      // Store the Zoom meeting join URL
       type: String,
       default: null,
     },
     password: {
-      // Store the Zoom meeting password (if any)
       type: String,
       default: null,
     },
+    phases: [phaseSchema], // Array of phases with associated tasks
   },
   {
     timestamps: true,
   }
 );
-const Chat= mongoose.model("Chat",chatModel);
-module.exports=Chat;
+
+const Chat = mongoose.model("Chat", chatModel);
+module.exports = Chat;

@@ -22,31 +22,38 @@ import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import axios from "axios";
 import ScrollableChat from "./ScrollableChat";
 import io from "socket.io-client";
-import Lottie from 'react-lottie';
+import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 import { useHistory } from "react-router-dom";
-const ENDPOINT="http://localhost:5000";
+import TaskManagerAdmin from "./Tasks/TaskManagerAdmin";
+const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [socketConnected, setSocketConnected]= useState(false);
-  const [typing, setTyping]= useState(false);
-  const [isTyping, setIsTyping]= useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [isInCall, setIsInCall] = useState(false);
   const [isRinging, setIsRinging] = useState(false); // For showing ringing notification
-  const { user, selectedChat, setSelectedChat, notifications, setNotifications} = useChatState();
+  const {
+    user,
+    selectedChat,
+    setSelectedChat,
+    notifications,
+    setNotifications,
+  } = useChatState();
   const toast = useToast();
   const history = useHistory();
-  const defaultOptions={
-    loop:true,
-    autoplay:true,
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
     animationData: animationData,
-    rendererSettings:{
-      preserveAspectRatio:"xMidYMid slice"
-    }
-  }
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
   useEffect(() => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
@@ -65,7 +72,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     if (!isInCall) {
       const videoCallUrl = `/video-call/${selectedChat._id}`;
       window.open(videoCallUrl, "_blank"); // Open video call in a new tab
-    } 
+    }
     setIsInCall(!isInCall);
   };
 
@@ -104,16 +111,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       }
     }
   };
-  useEffect(()=>{
-    socket= io(ENDPOINT);
+  useEffect(() => {
+    socket = io(ENDPOINT);
     socket.emit("setup", user);
-    socket.on("connected",()=>{
+    socket.on("connected", () => {
       setSocketConnected(true);
-    })
-    socket.on("typing",()=>setIsTyping(true));
-    socket.on("stop typing",()=>setIsTyping(false));
-
-  },[])
+    });
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop typing", () => setIsTyping(false));
+  }, []);
   const fetchMessages = async () => {
     if (!selectedChat) {
       return;
@@ -146,41 +152,49 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   };
   useEffect(() => {
     fetchMessages();
-    selectedChatCompare= selectedChat;
+    selectedChatCompare = selectedChat;
   }, [selectedChat]);
   // console.log(notifications,"--------------");
-  
-  useEffect(()=>{
-    socket.on("message received",(newMessageReceived)=>{
-      if(!selectedChatCompare || selectedChatCompare._id!== newMessageReceived.chat._id){
-          if(!notifications.includes(newMessageReceived)){
-            setNotifications([newMessageReceived,...notifications]);
-            setFetchAgain(!fetchAgain);
-          }
-      }
-      else{
+
+  useEffect(() => {
+    socket.on("message received", (newMessageReceived) => {
+      if (
+        !selectedChatCompare ||
+        selectedChatCompare._id !== newMessageReceived.chat._id
+      ) {
+        if (!notifications.includes(newMessageReceived)) {
+          setNotifications([newMessageReceived, ...notifications]);
+          setFetchAgain(!fetchAgain);
+        }
+      } else {
         setMessages([...messages, newMessageReceived]);
       }
-    })
-  })
+    });
+  });
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
     //Typing indicator logic
-    if(!socketConnected) return;
-    if(!typing){
+    if (!socketConnected) return;
+    if (!typing) {
       setTyping(true);
     }
     socket.emit("typing", selectedChat._id);
-    let lastTypingTime= new Date().getTime();
-    var timeLength=3000;
+    let lastTypingTime = new Date().getTime();
+    var timeLength = 3000;
     setTimeout(() => {
-      var timeNow= new Date().getTime();
-      var timeDiff= timeNow- lastTypingTime;
-      if(timeDiff>=timeLength && typing){
+      var timeNow = new Date().getTime();
+      var timeDiff = timeNow - lastTypingTime;
+      if (timeDiff >= timeLength && typing) {
         socket.emit("stop typing", selectedChat._id);
         setTyping(false);
       }
     }, timeLength);
+  };
+  const handlePhaseSubmit = async (phase) => {
+    // Backend call to save new phase
+  }
+  const handleTaskSubmit = async (task, phaseName) => {
+    // Backend call to save new task within a phase
   };
   return (
     <>
@@ -224,21 +238,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               </>
             )}
           </Text>
-          <Tabs
-            width={"100%"}
-            h={"80%"}
-            colorScheme="blue"        
-          >
+          <Tabs width={"100%"} h={"80%"} colorScheme="blue">
             <TabList>
               <Tab>Chats</Tab>
               <Tab>Files</Tab>
               <Tab>Tasks</Tab>
             </TabList>
-            <TabPanels  h={"100%"}>
-              <TabPanel
-                
-                height={"100%"}
-              >
+            <TabPanels h={"100%"}>
+              <TabPanel height={"100%"}>
                 <Box
                   display={"flex"}
                   flexDir={"column"}
@@ -286,6 +293,21 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                     />
                   </FormControl>
                 </Box>
+              </TabPanel>
+              <TabPanel>Files</TabPanel>
+              <TabPanel>
+                {(selectedChat.users.length === 2 ||
+                user._id === selectedChat.groupAdmin._id )? (
+                  <TaskManagerAdmin
+                    selectedChat={selectedChat}
+                    handlePhaseSubmit={handlePhaseSubmit}
+                    handleTaskSubmit={handleTaskSubmit}
+                  />
+                ) : (
+                  // Add components or logic to display all tasks for the admin user
+                  <Text>Displaying tasks assigned to you</Text>
+                  // Add components or logic to display only tasks assigned to the user
+                )}
               </TabPanel>
             </TabPanels>
           </Tabs>
