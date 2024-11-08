@@ -6,7 +6,10 @@ const colors= require("colors");
 const userRoutes= require("./routes/userRoutes");
 const chatRoutes= require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
-const videoRoutes = require("./routes/videoRoutes"); // Import video routes
+const taskRoutes = require("./routes/taskRoutes");
+const videoRoutes = require("./routes/videoRoutes"); 
+const phaseRoutes = require("./routes/phaseRoutes"); 
+
 const { notFound, errorHandler } = require("./middleware/errorMiddleWare");
 dotenv.config();
 connectDB();
@@ -19,6 +22,9 @@ app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/message', messageRoutes);
 app.use('/api/zoom',videoRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/phase", phaseRoutes);
+
 app.use(notFound);
 app.use(errorHandler);
 const PORT= process.env.PORT || 5000;

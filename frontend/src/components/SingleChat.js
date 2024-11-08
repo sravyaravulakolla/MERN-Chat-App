@@ -190,12 +190,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       }
     }, timeLength);
   };
-  const handlePhaseSubmit = async (phase) => {
-    // Backend call to save new phase
-  }
-  const handleTaskSubmit = async (task, phaseName) => {
-    // Backend call to save new task within a phase
-  };
   return (
     <>
       {selectedChat ? (
@@ -295,14 +289,21 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 </Box>
               </TabPanel>
               <TabPanel>Files</TabPanel>
-              <TabPanel>
-                {(selectedChat.users.length === 2 ||
-                user._id === selectedChat.groupAdmin._id )? (
-                  <TaskManagerAdmin
-                    selectedChat={selectedChat}
-                    handlePhaseSubmit={handlePhaseSubmit}
-                    handleTaskSubmit={handleTaskSubmit}
-                  />
+              <TabPanel height={"100%"}>
+                {selectedChat.users.length === 2 ||
+                user._id === selectedChat.groupAdmin._id ? (
+                  <Box
+                    display={"flex"}
+                    flexDir={"column"}
+                    p={3}
+                    bg={"#E8E8E8"}
+                    w={"100%"}
+                    h={"100%"}
+                    borderRadius={"lg"}
+                    overflowY={"auto"}
+                  >
+                    <TaskManagerAdmin selectedChat={selectedChat} />
+                  </Box>
                 ) : (
                   // Add components or logic to display all tasks for the admin user
                   <Text>Displaying tasks assigned to you</Text>

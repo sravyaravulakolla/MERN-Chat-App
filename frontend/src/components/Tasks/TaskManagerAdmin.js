@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Text,
@@ -10,58 +10,89 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { AddIcon } from "@chakra-ui/icons";
+import axios from "axios";
 
-const TaskManagerAdmin = ({
-  selectedChat,
-  handlePhaseSubmit,
-  handleTaskSubmit,
-}) => {
+const TaskManagerAdmin = ({ selectedChat }) => {
   const [phases, setPhases] = useState([]);
   const [newPhaseName, setNewPhaseName] = useState("");
   const [newTask, setNewTask] = useState({
-    name: "",
+    description: "",
     assignedTo: "",
     assignedToName: "",
     dueDate: "",
+    status: "pending",
   });
   const [activePhaseIndex, setActivePhaseIndex] = useState(null);
 
-  // Add a new phase and reset the input field
-  const addPhase = () => {
-    if (newPhaseName.trim() !== "") {
-      const phase = { name: newPhaseName, tasks: [] };
-      setPhases([...phases, phase]);
-      setNewPhaseName("");
-      handlePhaseSubmit(phase); // Backend call to save new phase
+  // Load phases and tasks on component mount or when selectedChat changes
+  useEffect(() => {
+    if (selectedChat?._id) {
+      fetchPhases();
+    }
+  }, [selectedChat]);
+
+  // Fetch phases and their tasks
+  const fetchPhases = async () => {
+    try {
+      const response = await axios.get(`/api/phase/${selectedChat._id}`);
+      setPhases(response.data.phases || []);
+    } catch (error) {
+      console.error("Error fetching phases:", error);
     }
   };
 
-  // Add a task to the active phase
-  const addTask = (phaseIndex) => {
-    if (newTask.name.trim()) {
-      const updatedPhases = [...phases];
-      const task = { ...newTask };
-      updatedPhases[phaseIndex].tasks.push(task);
-      setPhases(updatedPhases);
+  // Add a new phase
+  const addPhase = async () => {
+    if (newPhaseName.trim() !== "") {
+      try {
+        const response = await axios.post(
+          `/api/phase/${selectedChat._id}/phases`,
+          { phaseName: newPhaseName }
+        );
+        setPhases([...phases, { ...response.data.phase, tasks: [] }]);
+        setNewPhaseName("");
+      } catch (error) {
+        console.error("Error adding phase:", error);
+      }
+    }
+  };
 
-      // Reset new task form and set active phase index to null
-      setNewTask({ name: "", assignedTo: "", assignedToName: "", dueDate: "" });
-      setActivePhaseIndex(null);
+  // Add a task to a specific phase
+  const addTask = async (phaseIndex) => {
+    const phaseId = phases[phaseIndex]._id;
+    if (newTask.description.trim()) {
+      try {
+        const response = await axios.post(`/api/tasks/${phaseId}/tasks`, {
+          ...newTask,
+          chatId: selectedChat._id,
+        });
+        const updatedPhases = [...phases];
+        updatedPhases[phaseIndex].tasks.push(response.data.task);
+        setPhases(updatedPhases);
 
-      // Call backend to save the new task within the phase
-      handleTaskSubmit(task, updatedPhases[phaseIndex].name);
+        // Reset task form
+        setNewTask({
+          description: "",
+          assignedTo: "",
+          assignedToName: "",
+          dueDate: "",
+          status: "pending",
+        });
+        setActivePhaseIndex(null);
+      } catch (error) {
+        console.error("Error adding task:", error);
+      }
     }
   };
 
   return (
-    <Box>
-      <Text fontSize="xl" fontWeight="bold">
-        Admin Task Manager
+    <Box display={"flex"} flexDir={"column"} w={"100%"}>
+      <Text pl={"49%"} fontSize="xl" fontWeight="bold">
+        Tasks
       </Text>
 
       {/* Phase Creation with "+" Button */}
-      <Box mt={4} display="flex" alignItems="center">
-        <Text fontSize="lg">Phases</Text>
+      <Box mt={4} h={"100%"} display="flex" alignItems="center">
         <IconButton
           icon={<AddIcon />}
           colorScheme="blue"
@@ -91,7 +122,7 @@ const TaskManagerAdmin = ({
       <VStack align="start" spacing={4} mt={6}>
         {phases.map((phase, index) => (
           <Box
-            key={index}
+            key={phase._id}
             p={4}
             border="1px solid lightgray"
             borderRadius="md"
@@ -99,7 +130,7 @@ const TaskManagerAdmin = ({
           >
             <HStack>
               <Text fontSize="lg" fontWeight="bold">
-                {phase.name}
+                {phase.phaseName}
               </Text>
               <IconButton
                 icon={<AddIcon />}
@@ -114,10 +145,10 @@ const TaskManagerAdmin = ({
             {activePhaseIndex === index && (
               <Box mt={2}>
                 <Input
-                  placeholder="Task Name"
-                  value={newTask.name}
+                  placeholder="Task Description"
+                  value={newTask.description}
                   onChange={(e) =>
-                    setNewTask({ ...newTask, name: e.target.value })
+                    setNewTask({ ...newTask, description: e.target.value })
                   }
                   mt={2}
                 />
@@ -132,7 +163,7 @@ const TaskManagerAdmin = ({
                     setNewTask({
                       ...newTask,
                       assignedTo: selectedUserId,
-                      assignedToName: selectedUser.name,
+                      assignedToName: selectedUser?.name || "",
                     });
                   }}
                   mt={2}
@@ -156,7 +187,7 @@ const TaskManagerAdmin = ({
                   mt={2}
                   onClick={() => addTask(index)}
                 >
-                  Add Task to {phase.name}
+                  Add Task to {phase.phaseName}
                 </Button>
               </Box>
             )}
@@ -164,24 +195,23 @@ const TaskManagerAdmin = ({
             {/* Display Tasks within Each Phase */}
             <Box mt={4}>
               <Text fontSize="md" fontWeight="bold">
-                Tasks in {phase.name}
+                Tasks in {phase.phaseName}
               </Text>
-              {phase.tasks.length > 0 ? (
-                phase.tasks.map((task, i) => (
+              {phase.tasks?.length > 0 ? (
+                phase.tasks.map((task) => (
                   <Box
-                    key={i}
+                    key={task._id}
                     p={2}
                     mt={2}
                     border="1px solid lightgray"
                     borderRadius="md"
                   >
                     <Text>
-                      <strong>Task:</strong> {task.name}
+                      <strong>Task:</strong> {task.description}
                     </Text>
                     <Text>
                       <strong>Assigned To:</strong> {task.assignedToName}
-                    </Text>{" "}
-                    {/* Display the assigned user's name */}
+                    </Text>
                     <Text>
                       <strong>Due Date:</strong> {task.dueDate}
                     </Text>
